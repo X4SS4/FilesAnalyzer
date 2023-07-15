@@ -1,25 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection.PortableExecutable;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace WpfApp1;
 
@@ -29,23 +17,21 @@ namespace WpfApp1;
 /// 
 
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, INotifyPropertyChanged
 {
     public ObservableCollection<string> Files { get; set; } = new ObservableCollection<string>();
     public bool isAnalyze = false;
+    public CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
-    private int progress;
-    private string symbolsCount;
-    private string wordsCount;
-    private string sentencesCount;
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    protected virtual void PropertyChange<T>(out T field, T value, [CallerMemberName] string propName = "")
+    protected virtual void PropertyChange<T>(out T field, T value, [CallerMemberName] string? propName = "")
     {
         field = value;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
     }
 
+    private int progress;
     public int Progress
     {
         get { return progress; }
@@ -55,7 +41,8 @@ public partial class MainWindow : Window
             PropertyChange(out this.progress, value);
         }
     }
-    public string SymbolsCount
+    private string? symbolsCount;
+    public string? SymbolsCount
     {
         get { return symbolsCount; }
         set
@@ -65,7 +52,8 @@ public partial class MainWindow : Window
         }
     }
 
-    public string WordsCount
+    private string? wordsCount;
+    public string? WordsCount
     {
         get { return wordsCount; }
         set
@@ -75,7 +63,8 @@ public partial class MainWindow : Window
         }
     }
 
-    public string SentencesCount
+    private string? sentencesCount;
+    public string? SentencesCount
     {
         get { return sentencesCount; }
         set
@@ -89,58 +78,54 @@ public partial class MainWindow : Window
     {
         Files.Add("Assets/ipsum.txt");
         Files.Add("Assets/loreem.txt");
+        Files.Add("Assets/SonO.json");
         InitializeComponent();
         this.DataContext = this;
     }
 
-    private void AnalyzeButton_Click(object sender, RoutedEventArgs e)
+    private async void AnalyzeButton_Click(object sender, RoutedEventArgs e)
     {
-        if (isAnalyze) return;
+        AnalyzeButton.IsEnabled = false;
+        string? itemToRead = fileList.SelectedItem as string;
+        if (isAnalyze || itemToRead is null) return;
         isAnalyze = true;
-        var thread = new Thread(() =>
-            {
-                using (var reader = new StreamReader("Assets/ipsum.txt"))
+        CancellationToken cancellationToken = this.cancellationTokenSource.Token;
+        await Task.Run(() => {
+            using (var reader = new StreamReader(itemToRead)) {
+                /*Ради скорости загрузки прогрессбара, но думаю это бессмысленно было создавать еще один поток*/
+                var allContent = reader.ReadToEnd();
+                Dispatcher.Invoke(() => LoadingPB.Maximum = allContent.Count());
+                StringBuilder content = new StringBuilder();
+                int charToWrite;
+                reader.BaseStream.Seek(0, SeekOrigin.Begin);
+                while ((charToWrite = reader.Read()) != -1 && !cancellationToken.IsCancellationRequested)
                 {
-                    var content = reader.ReadToEnd();
-                    var analyzer = new Analyzer(content);
-
-
-                    int totalSymbols = content.Length;
-                    int totalWords = content.Split().Count();
-                    int totalSentences = content.Split(separator: new char[] { '.', ',', '?', '!' }).Count();
-
-                    int symbolsProcessed = 0;
-                    int wordsProcessed = 0;
-                    int sentencesProcessed = 0;
-
-                    while (!reader.EndOfStream && isAnalyze)
-                    {
-                        var line = reader.ReadLine();
-
-                        symbolsProcessed += analyzer.GetSymbolsCount(line);
-                        wordsProcessed += analyzer.GetWordsCount(line);
-                        sentencesProcessed += analyzer.GetSentencesCount(line);
-
-                        SymbolsCount = $"{symbolsProcessed}/{totalSymbols}";
-                        WordsCount = $"{wordsProcessed}/{totalWords}";
-                        SentencesCount = $"{sentencesProcessed}/{totalSentences}";
-
-                        Progress = (int)(((double)symbolsProcessed / totalSymbols) * 100);
-
-                        Thread.Sleep(100);
-                    }
-
-                    isAnalyze = false;
+                    var currentChar = (char)charToWrite;
+                    Dispatcher.Invoke(() => Progress++);
+                    content.Append(currentChar);
+                    //Thread.Sleep(1);
+                    /*Лучше было бы так */
+                    //Dispatcher.Invoke(()=> LoadingPB.Maximum = LoadingPB.Maximum < Progress * 1.1    
+                    //        ? LoadingPB.Maximum * 2
+                    //        : LoadingPB.Maximum);                    
                 }
+                var analyzer = new Analyzer(content.ToString());
+                SymbolsCount = $"{analyzer.GetSymbolsCount(content.ToString())}";
+                WordsCount = $"{analyzer.GetWordsCount(content.ToString())}";
+                SentencesCount = $"{analyzer.GetSentencesCount(content.ToString())}";
+                Progress = 0;
+                isAnalyze = false;
+                cancellationTokenSource = new CancellationTokenSource();
+            }
             
-            });
-        thread.Start();
+        });
 
+        AnalyzeButton.IsEnabled = true;
     }
 
     private void Button_Click(object sender, RoutedEventArgs e)
     {
-
+       if(isAnalyze) cancellationTokenSource?.Cancel();
     }
 }
 

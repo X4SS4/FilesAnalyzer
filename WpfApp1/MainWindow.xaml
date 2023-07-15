@@ -8,7 +8,7 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <DockPanel LastChildFill="False" Grid.Column="0">
-            <ProgressBar Maximum="40000" Height="25" Margin="50" DockPanel.Dock="Top" Value="{Binding Progress}"/>
+            <ProgressBar x:Name="LoadingPB" Height="25" Margin="50" DockPanel.Dock="Top" Value="{Binding Progress}"/>
             <Button Content="Break" Height="20" Margin="50,0,250,10" DockPanel.Dock="Top" Click="Button_Click" />
             <Grid Height="100" Margin="50,0,50,150" DockPanel.Dock="Bottom">
                 <Grid.ColumnDefinitions>
@@ -20,12 +20,12 @@
                     <RowDefinition/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <Label Content="Symbols count:" HorizontalContentAlignment="Center" Grid.Column="0" Grid.Row="0"/>
-                <TextBox Grid.Column="1" Grid.Row="0" />
-                <Label Content="Words count:" HorizontalContentAlignment="Center" Grid.Column="0" Grid.Row="1"/>
-                <TextBox Grid.Column="1" Grid.Row="1" />
-                <Label Content="Sentences count:" HorizontalContentAlignment="Center" Grid.Column="0" Grid.Row="2"/>
-                <TextBox Grid.Column="1" Grid.Row="2" />
+                <Label Content="Symbols count:" Grid.Column="0" Grid.Row="0"/>
+                <TextBlock Grid.Column="1" Grid.Row="0" Text="{Binding SymbolsCount}"/>
+                <Label Content="Words count:" Grid.Column="0" Grid.Row="1"/>
+                <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding WordsCount}"/>
+                <Label Content="Sentences count:" Grid.Column="0" Grid.Row="2"/>
+                <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding SentencesCount}"/>
             </Grid>
         </DockPanel>
         <StackPanel Grid.Column="1">
