@@ -12,8 +12,8 @@
       }
     ],
     "additionalProbingPaths": [
-      "C:\\Users\\Hasay_tf23\\.dotnet\\store\\|arch|\\|tfm|",
-      "C:\\Users\\Hasay_tf23\\.nuget\\packages",
+      "C:\\Users\\Sevinc\\.dotnet\\store\\|arch|\\|tfm|",
+      "C:\\Users\\Sevinc\\.nuget\\packages",
       "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
     ],
     "configProperties": {
